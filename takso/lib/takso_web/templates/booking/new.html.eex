@@ -1,3 +1,6 @@
+
+<%= form_for @conn, Routes.booking_path(@conn, :create), fn booking -> %>
 <input id="pickup_address">
 <input id="dropoff_address">
 <button id="submit_button">Submit</button>
+<% end %>
