@@ -45,5 +45,8 @@ defmodule WhiteBreadContext do
     {:ok, state}
   end
 
+  then_ ~r/^I should receive a rejection message$/, fn state ->
+    {:ok, state}
+  end
 
 end
