@@ -4,6 +4,7 @@ defmodule TaksoWeb.BookingController do
   alias Takso.Repo
   alias Takso.Sales.Taxi
   alias Takso.Sales.Booking
+  alias Takso.Accounts.User
 
   import Ecto.Query, only: [from: 2]
   alias Ecto.Changeset
@@ -14,6 +15,12 @@ defmodule TaksoWeb.BookingController do
   end
 
   def create(conn,  %{"booking" => booking_params}) do
+    # User
+    user = conn.assigns.current_user
+
+    # booking_struct = Ecto.build_assoc(user, :bookings, Enum.map(booking_params, fn({key, value}) -> {String.to_atom(key), value} end))
+
+    # Status
     query = from t in Taxi, where: t.status == "available", select: t
     available_taxis = Takso.Repo.all(query)
 
@@ -22,7 +29,7 @@ defmodule TaksoWeb.BookingController do
     type = if available, do: :info, else: :error
     msg = if available, do: "Your taxi will arrive in 5 minutes", else: "At present, there is no taxi available!"
 
-    changeset = updateBookingStatus(available, booking_params)
+    changeset = updateBookingStatus(available, booking_params, user)
 
     case Repo.insert(changeset) do
       {:ok, _} ->
@@ -35,11 +42,12 @@ defmodule TaksoWeb.BookingController do
 
   end
 
-  defp updateBookingStatus(available, booking_params) do
+  defp updateBookingStatus(available, booking_params, user) do
     st = if available, do: "ACCEPTED", else: "REJECTED"
 
     Booking.changeset(%Booking{}, booking_params)
                 |> Changeset.put_change(:status, st)
+                |> Changeset.put_change(:user, user)
   end
 
 
