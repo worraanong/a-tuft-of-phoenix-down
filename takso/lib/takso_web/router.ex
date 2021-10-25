@@ -19,6 +19,8 @@ defmodule TaksoWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    get "/bookings/summary", BookingController, :summary
+
     resources "/users", UserController
     resources "/bookings", BookingController
     resources "/sessions", SessionController, only: [:new, :create, :delete]

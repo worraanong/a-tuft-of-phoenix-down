@@ -50,6 +50,17 @@ defmodule TaksoWeb.BookingController do
 
   end
 
+  def summary(conn, _params) do
+    query = from t in Taxi,
+            join: a in Allocation, on: t.id == a.taxi_id,
+            group_by: t.username,
+            where: a.status == "accepted",
+            select: {t.username, count(a.id)}
+    render conn, "summary.html", tuples: Repo.all(query)
+  end
+
+
+
   defp updateBookingStatus(available, booking_params, user) do
     st = if available, do: "ACCEPTED", else: "REJECTED"
 
