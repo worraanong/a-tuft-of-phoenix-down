@@ -3,7 +3,6 @@ defmodule TaksoWeb.BookingController do
 
   alias Takso.Repo
   alias Takso.Sales.{Taxi, Booking, Allocation}
-  alias Takso.Accounts.User
 
   import Ecto.Query, only: [from: 2]
   alias Ecto.{Changeset, Multi}
@@ -22,8 +21,6 @@ defmodule TaksoWeb.BookingController do
     # User
     user = conn.assigns.current_user
 
-    # booking_struct = Ecto.build_assoc(user, :bookings, Enum.map(booking_params, fn({key, value}) -> {String.to_atom(key), value} end))
-
     # Status
     query = from t in Taxi, where: t.status == "available", select: t
     available_taxis = Takso.Repo.all(query)
@@ -34,26 +31,22 @@ defmodule TaksoWeb.BookingController do
     msg = if available, do: "Your taxi will arrive in 5 minutes", else: "At present, there is no taxi available!"
 
     changeset = updateBookingStatus(available, booking_params, user)
-    booking = Repo.insert!(changeset)
 
-    if available do
-      taxi = List.first(available_taxis)
-      Multi.new
-      |> Multi.insert(:allocation, Allocation.changeset(%Allocation{}, %{status: "allocated"}) |> Changeset.put_change(:booking_id, booking.id) |> Changeset.put_change(:taxi_id, taxi.id))
-      |> Multi.update(:taxi, Taxi.changeset(taxi, %{}) |> Changeset.put_change(:status, "busy"))
-      |> Repo.transaction
+    case Repo.insert(changeset) do
+      {:ok, _} ->
+        booking = Repo.insert!(changeset)
+        if available do
+          taxi = List.first(available_taxis)
+          Multi.new
+          |> Multi.insert(:allocation, Allocation.changeset(%Allocation{}, %{status: "allocated"}) |> Changeset.put_change(:booking_id, booking.id) |> Changeset.put_change(:taxi_id, taxi.id))
+          |> Multi.update(:taxi, Taxi.changeset(taxi, %{}) |> Changeset.put_change(:status, "busy"))
+          |> Repo.transaction
+        end
+        conn |> put_flash(type, msg)
+             |> redirect(to: Routes.booking_path(conn, :index))
+      {:error, changeset} ->
+        render(conn, "new.html", changeset: changeset)
     end
-
-    conn |> put_flash(type, msg)
-         |> redirect(to: Routes.booking_path(conn, :index))
-    # case Repo.insert(changeset) do
-    #   {:ok, _} ->
-    #       conn |> put_flash(type, msg)
-    #            |> redirect(to: Routes.booking_path(conn, :index))
-    #   {:error, changeset} ->
-    #     render(conn, "new.html", changeset: changeset)
-    # end
-
 
   end
 
