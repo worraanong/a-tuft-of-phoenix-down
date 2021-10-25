@@ -9,6 +9,11 @@ defmodule TaksoWeb.BookingController do
   import Ecto.Query, only: [from: 2]
   alias Ecto.Changeset
 
+  def index(conn, _params) do
+    bookings = Repo.all(from b in Booking, where: b.user_id == ^conn.assigns.current_user.id)
+    render conn, "index.html", bookings: bookings
+  end
+
   def new(conn, _params) do
     changeset = Booking.changeset(%Booking{}, %{})
     render(conn, "new.html", changeset: changeset)
